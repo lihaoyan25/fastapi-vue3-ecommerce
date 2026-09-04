@@ -1,0 +1,60 @@
+from pydantic_settings import BaseSettings
+from functools import lru_cache
+from urllib.parse import quote_plus
+
+# 项目配置
+class Settings(BaseSettings):
+
+    # FastAPI配置
+    APP_NAME: str = "购物车管理系统"
+    APP_DESCRIPTION: str = "基于FastAPI开发的购物车管理系统"
+    APP_VERSION: str = "2.0"
+    DEBUG: bool = True
+
+    # 数据库配置(BaseSettings自动读取.env)
+    DATABASE_HOST: str
+    DATABASE_PORT: int
+    DATABASE_USER: str
+    DATABASE_PASSWORD: str
+    DATABASE_NAME: str
+
+    # 连接池配置
+    POOL_SIZE: int
+    MAX_OVERFLOW: int
+    POOL_TIMEOUT: int
+    POOL_RECYCLE: int
+
+    # JWT配置（SECRET_KEY 必须通过 .env 或环境变量提供，禁止使用默认值）
+    SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # 服务器配置
+    SERVER_HOST: str = "0.0.0.0"
+    SERVER_PORT: int = 8000
+
+    # CORS配置
+    CORS_ALLOW_ORIGINS: str
+    CORS_ALLOW_CREDENTIALS: bool
+    CORS_ALLOW_METHODS: str
+    CORS_ALLOW_HEADERS: str
+
+    # 动态拼接数据库连接url（对用户名/密码做 URL 编码，避免特殊字符破坏连接串）
+    @property
+    def DATABASE_URL(self) -> str:
+        user = quote_plus(self.DATABASE_USER)
+        password = quote_plus(self.DATABASE_PASSWORD)
+        return f"mysql+pymysql://{user}:{password}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8"
+
+    # 读取.env
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+@lru_cache()
+def get_settings() -> Settings:
+    """获取配置单例"""
+    return Settings()
+
+settings = get_settings()

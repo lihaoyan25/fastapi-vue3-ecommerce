@@ -1,0 +1,176 @@
+# 开发文档
+
+## 1. 项目简介
+
+本项目是一个前后端分离的**购物车管理系统**, 采用 FastAPI + Vue 3 技术栈, 实现用户注册登录、商品浏览/搜索/管理、购物车、余额充值、下单结算等核心电商闭环能力
+
+- 后端: RESTful API, JWT 鉴权, 分层架构(`routes → services → dao → models/schemas`)
+- 前端: Vue 3 `<script setup>` + Pinia + Vue Router + Axios + Tailwind CSS
+- 数据库: MySQL(SQLAlchemy 2.0 ORM, PyMySQL 驱动)
+
+## 2. 技术栈
+
+| 层 | 技术 | 版本约束 |
+| --- | --- | --- |
+| 后端框架 | FastAPI | 0.109.x |
+| ASGI 服务器 | uvicorn | 0.27.x |
+| ORM | SQLAlchemy | 2.0.x |
+| 数据校验 | Pydantic | 2.6.x |
+| 配置管理 | pydantic-settings | 2.1.x |
+| 鉴权 | python-jose + passli(bcrypt) | 3.3.0 / 1.7.4 |
+| 数据库驱动 | PyMySQL | 1.1.x |
+| 前端框架 | Vue | ^3.4 |
+| 状态管理 | Pinia | ^2.1 |
+| 路由 | Vue Router | ^4.3 |
+| HTTP 客户端 | Axios | ^1.6 |
+| 样式 | Tailwind CSS | ^3.4 |
+| 构建工具 | Vite | ^5.2 |
+
+完整依赖清单见根目录 `requirements.txt`(后端) 与 `frontend/package.json`(前端)
+
+## 3. 目录结构
+
+```text
+shop_cart_sys_v2.0/
+├── app/                        # 后端应用
+│   ├── main.py                 # 应用入口: 生命周期、CORS、全局异常、路由挂载
+│   ├── config.py               # 配置(pydantic-settings 读取 .env)
+│   ├── database.py             # 数据库引擎、会话工厂、Base
+│   ├── api/
+│   │   ├── deps.py             # 依赖注入: get_current_user / get_current_superuser
+│   │   └── v1/
+│   │       ├── router.py       # v1 路由汇总
+│   │       ├── routes/         # 路由层(薄, 只做参数与响应编排)
+│   │       └── schemas/        # Pydantic 请求/响应模型
+│   ├── services/               # 业务逻辑层(事务边界)
+│   ├── dao/                    # 数据访问层(不含 commit, 事务交给 service)
+│   ├── models/                 # SQLAlchemy ORM 模型
+│   └── utils/                  # 通用工具(JWT、密码)
+├── frontend/                   # 前端应用(Vite + Vue3)
+│   ├── src/api/                # Axios 封装与接口定义
+│   ├── src/stores/             # Pinia 状态
+│   ├── src/router/             # 路由与守卫
+│   ├── src/components/         # 通用组件
+│   └── src/views/              # 页面
+├── scripts/init_db.py          # 初始化管理员脚本
+├── docs/                       # 项目文档
+├── static/                     # 后端挂载的静态资源
+├── .env / .env.example         # 环境变量
+└── requirements.txt
+```
+
+## 4. 分层架构约定
+
+项目遵循「职责单一」的分层原则, 调用方向严格为单向: 
+
+```text
+routes(路由) → services(业务) → dao(数据访问) → models(ORM)
+                         ↘ schemas(入参/出参校验)
+```
+
+各层职责: 
+
+- **routes**: 仅做参数接收、鉴权依赖注入、调用 service、统一响应包装不写业务逻辑
+- **services**: 承载业务规则, **控制事务边界**(显式 `commi()` / `rollbac()`)
+- **dao**: 只封装 SQLAlchemy 查询, **不自行 `commi()`**, 将事务提交权上交给 service
+- **models**: 数据库表结构与关联关系定义
+- **schemas**: 请求参数校验与响应序列化(Pydantic)
+
+## 5. 关键约定
+
+### 5.1 统一响应结构
+
+所有业务接口成功时返回: 
+
+```json
+{ "code": 200, "message": "success", "data": { } }
+```
+
+错误时由全局异常处理器统一返回同构结构: 
+
+```json
+{ "code": 400, "message": "错误描述", "data": null }
+```
+
+- 成功 `code` 固定为 `200`
+- 错误 `code` 与 HTTP 状态码一致(400/401/403/404/422/500 等)
+- 后端统一使用 `success_respons(data, message)` 辅助函数构造成功响应
+
+### 5.2 阻塞型 DB 操作异步化
+
+路由声明为 `async def`, 所有同步、阻塞的数据库调用必须通过线程池执行, 避免阻塞事件循环: 
+
+```python
+from fastapi.concurrency import run_in_threadpool
+
+data = await run_in_threadpoo(cart_service.get_cart, current_user.user_id)
+```
+
+### 5.3 事务与并发安全
+
+- DAO 不提交事务, Service 负责 `commi()`
+- 结算接口对商品行加锁防超卖, 使用 `SELECT ... FOR UPDATE`, 并通过 `populate_existing=True` 刷新最新库存值
+- 任何结算异常都需 `rollbac()` 后重新抛出
+
+### 5.4 鉴权
+
+- 登录签发 `access_token`(短时)+ `refresh_token`(长时)
+- `refresh_token` 用于换取新的 `access_token`, 前端在 401 时自动刷新并重放请求
+- `SECRET_KEY` 必须通过环境变量/`.env` 提供, 禁止使用默认值
+
+## 6. 本地开发环境搭建
+
+### 6.1 后端
+
+```bash
+# 1. 创建并激活虚拟环境(建议 Python 3.12)
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 准备配置
+# 复制 .env.example 为 .env, 并填写数据库连接信息与 SECRET_KEY
+copy .env.example .env
+
+# 4. 启动服务(默认 8000 端口, 启动时自动 create_all 建表)
+uvicorn app.main:app --reload
+```
+
+接口文档(Swagger UI)启动后访问 `http://localhost:8000/docs`
+
+### 6.2 前端
+
+```bash
+cd frontend
+npm install
+npm run dev          # 默认 http://localhost:3000
+```
+
+开发模式下 Vite 已配置代理, 将 `/api` 与 `/static` 转发到 `http://localhost:8000`
+
+### 6.3 初始化管理员
+
+```bash
+.venv\Scripts\python.exe scripts\init_db.py
+# 默认账号 admin / admin123, 首次登录后请尽快修改密码
+```
+
+## 7. 常用命令
+
+| 用途 | 命令 |
+| --- | --- |
+| 后端启动(开发) | `uvicorn app.main:app --reload` |
+| 后端语法检查 | `.venv\Scripts\python.exe -m compileall -q app` |
+| 前端开发 | `cd frontend && npm run dev` |
+| 前端构建 | `cd frontend && npm run build` |
+| 初始化管理员 | `.venv\Scripts\python.exe scripts\init_db.py` |
+
+## 8. 代码规范提示
+
+- 时间戳统一使用 naive `datetime.now`(单时区部署, 不引入时区对象)
+- 金额(价格、余额、充值金额等)全链路使用 `Decimal`: 数据库列用 `DECIMA(14, 2)`, schema 字段(如 `price`、`balance`、`amount`)声明为 `Decimal` 而非 `float`, service 层运算保持 `Decimal` 不混入 float; 仅在 FastAPI 序列化响应时由框架转成 JSON 数字
+- 密码通过 `hash_password` / `verify_password` 处理, 禁止明文存储
+- 新增接口时同步在 `schemas` 定义请求/响应模型, 并遵循统一响应结构
+- 前端所有请求统一走 `src/api/request.js` 封装的实例, 不要直接使用原生 `axios`(刷新令牌的场景除外)
