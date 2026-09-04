@@ -1,6 +1,6 @@
 # 购物车管理系统 (shop_cart_sys_v2.0)
 
-一个前后端分离的「购物车管理系统」, 实现用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算等核心电商闭环能力
+一个前后端分离的**购物车管理系统**, 实现用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算等核心电商闭环能力
 
 - 后端: FastAPI + SQLAlchemy 2.0 + MySQL, JWT 鉴权, 分层架构 (`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Vite + Pinia + Vue Router + Axios + Tailwind CSS
