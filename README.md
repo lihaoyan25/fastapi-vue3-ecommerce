@@ -5,6 +5,22 @@
 - 后端: FastAPI + SQLAlchemy 2.0 + MySQL, JWT 鉴权, 分层架构 (`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Vite + Pinia + Vue Router + Axios + Tailwind CSS
 
+## 项目预览
+
+![首页效果图](./docs/screenshots/home.png)
+
+![登录页面](./docs/screenshots/login.png)
+
+![注册页面](./docs/screenshots/register.png)
+
+![购物车页面](./docs/screenshots/cart.png)
+
+![个人主页](./docs/screenshots/profile.png)
+
+![商品管理页面](./docs/screenshots/products.png)
+
+![新增商品](./docs/screenshots/upload.png)
+
 ## 功能特性
 
 - 用户认证: 注册, 登录, JWT 鉴权, `refresh_token` 自动续期
