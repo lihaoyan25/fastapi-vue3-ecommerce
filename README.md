@@ -9,6 +9,8 @@
 
 ![首页效果图](./docs/screenshots/home.png)
 
+![商品详情页](./docs/screenshots/detail.png)
+
 ![登录页面](./docs/screenshots/login.png)
 
 ![注册页面](./docs/screenshots/register.png)
