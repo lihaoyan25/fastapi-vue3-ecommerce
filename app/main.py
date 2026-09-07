@@ -58,9 +58,19 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = []
+    message = "请求参数校验失败"
+    for err in exc.errors():
+        msg = err.get("msg", "")
+        # value_error 时，ctx.error 才是原始异常信息（如「手机号格式不正确」），且不含前缀
+        if err.get("type") == "value_error" and err.get("ctx", {}).get("error"):
+            msg = str(err["ctx"]["error"])
+        errors.append({"loc": err.get("loc"), "msg": msg})
+        if message == "请求参数校验失败":
+            message = msg
     return JSONResponse(
         status_code=422,
-        content={"code": 422, "message": "请求参数校验失败", "data": exc.errors()},
+        content={"code": 422, "message": message, "data": errors},
     )
 
 
