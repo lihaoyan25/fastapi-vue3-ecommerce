@@ -49,6 +49,21 @@ export const useUserStore = defineStore('user', {
       return res
     },
 
+    // 更新个人资料（用户名/邮箱/手机号）
+    async updateProfile(data) {
+      const res = await request.put('/users/me', data)
+      this.userInfo = res
+      return res
+    },
+
+    // 修改密码
+    async changePassword(oldPassword, newPassword) {
+      return await request.put('/users/me/password', {
+        old_password: oldPassword,
+        new_password: newPassword
+      })
+    },
+
     // 登出
     logout() {
       this.token = ''

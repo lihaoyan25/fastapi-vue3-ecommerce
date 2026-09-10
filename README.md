@@ -1,6 +1,6 @@
 # 购物车管理系统 (shop_cart_sys_v2.0)
 
-一个前后端分离的**购物车管理系统**, 实现用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算等核心电商闭环能力
+一个前后端分离的**购物车管理系统**, 实现用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算, 智能客服等核心电商闭环能力
 
 - 后端: FastAPI + SQLAlchemy 2.0 + MySQL, JWT 鉴权, 分层架构 (`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Vite + Pinia + Vue Router + Axios + Tailwind CSS
@@ -9,13 +9,17 @@
 
 ![首页效果图](./docs/screenshots/home.png)
 
+![智能客服悬浮窗-页面效果](./docs/screenshots/chat_view.png)
+
+![智能客服悬浮窗-推荐卡片](./docs/screenshots/chat_recommend.png)
+
+![智能客服悬浮窗-代劳服务](./docs/screenshots/chat_services.png)
+
 ![商品详情页](./docs/screenshots/detail.png)
 
-![登录页面](./docs/screenshots/login.png)
-
-![注册页面](./docs/screenshots/register.png)
-
 ![购物车页面](./docs/screenshots/cart.png)
+
+![订单页面](./docs/screenshots/order.png)
 
 ![个人主页](./docs/screenshots/profile.png)
 
@@ -23,12 +27,18 @@
 
 ![新增商品](./docs/screenshots/upload.png)
 
+![登录页面](./docs/screenshots/login.png)
+
+![注册页面](./docs/screenshots/register.png)
+
 ## 功能特性
 
-- 用户认证: 注册, 登录, JWT 鉴权, `refresh_token` 自动续期
+- 用户认证: 注册, 登录(支持用户名/邮箱/手机号), JWT 鉴权, `refresh_token` 自动续期, 忘记密码(账号+手机号验证重置)
 - 商品: 分页列表, 搜索, 详情; 管理员新增/编辑/删除
-- 购物车: 增删改查, 下单结算 (`SELECT ... FOR UPDATE` 锁行防超卖)
-- 账户: 余额查询, 充值, 修改密码, 更新资料
+- 购物车: 增删改查, 勾选/全选结算
+- 订单: 下单生成待支付订单(20 分钟未支付自动取消), 余额支付, 手动取消, 删除已取消订单
+- 账户: 余额查询, 充值, 修改密码, 修改用户名/邮箱/手机号
+- 智能客服: 在本项目中由 DeepSeek 驱动, SSE 流式回复, 多轮记忆, 可查询订单/商品/购物车并代改购物车, 支持商品/订单卡片对话
 - 角色权限: 普通用户 / 管理员
 
 ## 技术栈
@@ -48,7 +58,7 @@
 | 样式 | Tailwind CSS 3.4 |
 | 构建工具 | Vite 5.2 |
 
-完整依赖见 [requirements.txt](requirements.txt) (后端)与 [frontend/package.json](frontend/package.json) (前端)
+完整依赖见 [requirements.txt](requirements.txt) (后端) 与 [frontend/package.json](frontend/package.json) (前端)
 
 ## 目录结构
 

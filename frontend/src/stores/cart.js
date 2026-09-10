@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getCart, addToCart, updateCartItem, removeCartItem, checkout } from '../api/cart'
+import { getCart, addToCart, updateCartItem, removeCartItem } from '../api/cart'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -38,13 +38,6 @@ export const useCartStore = defineStore('cart', {
     async removeItem(product_id) {
       const res = await removeCartItem(product_id)
       this.cartData = res
-      return res
-    },
-
-    // 结算
-    async checkout() {
-      const res = await checkout()
-      this.cartData = { items: [], total_amount: 0, total_quantity: 0 }
       return res
     }
   }

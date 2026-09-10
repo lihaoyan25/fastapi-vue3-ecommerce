@@ -19,3 +19,8 @@ export function login(username, password) {
 export function getCurrentUser() {
   return request.get('/auth/me')
 }
+
+// 忘记密码：账号(用户名或邮箱)+手机号验证身份后重置
+export function forgotPassword(data) {
+  return request.post('/auth/forgot-password', data)
+}

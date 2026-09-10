@@ -84,14 +84,3 @@ async def clear_cart(
     cart_service = CartService(db)
     data = await run_in_threadpool(cart_service.clear_cart, current_user.user_id)
     return success_response(data=data)
-
-
-@router.post("/checkout")
-async def checkout(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """购物车结算"""
-    cart_service = CartService(db)
-    data = await run_in_threadpool(cart_service.checkout, current_user.user_id)
-    return success_response(data=data)

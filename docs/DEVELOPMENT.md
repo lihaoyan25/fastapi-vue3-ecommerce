@@ -2,7 +2,7 @@
 
 ## 1. 项目简介
 
-本项目是一个前后端分离的**购物车管理系统**, 采用 FastAPI + Vue 3 技术栈, 实现用户注册登录、商品浏览/搜索/管理、购物车、余额充值、下单结算等核心电商闭环能力
+本项目是一个前后端分离的**购物车管理系统**, 采用 FastAPI + Vue 3 技术栈, 实现用户注册登录(支持用户名/邮箱/手机号)、忘记密码、商品浏览/搜索/管理、购物车勾选结算、订单与余额支付(20 分钟未支付自动取消)、余额充值、个人资料与密码管理等核心电商闭环能力
 
 - 后端: RESTful API, JWT 鉴权, 分层架构(`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Pinia + Vue Router + Axios + Tailwind CSS
@@ -45,7 +45,9 @@ shop_cart_sys_v2.0/
 │   ├── services/               # 业务逻辑层(事务边界)
 │   ├── dao/                    # 数据访问层(不含 commit, 事务交给 service)
 │   ├── models/                 # SQLAlchemy ORM 模型
-│   └── utils/                  # 通用工具(JWT、密码)
+│   ├── tools/                  # 智能客服工具层(LLM function calling, 复用 service 层)
+│   ├── utils/                  # 通用工具(JWT、密码)
+│   └── prompts/                # 智能客服系统提示词(System Prompt)
 ├── frontend/                   # 前端应用(Vite + Vue3)
 │   ├── src/api/                # Axios 封装与接口定义
 │   ├── src/stores/             # Pinia 状态
@@ -94,7 +96,7 @@ routes(路由) → services(业务) → dao(数据访问) → models(ORM)
 
 - 成功 `code` 固定为 `200`
 - 错误 `code` 与 HTTP 状态码一致(400/401/403/404/422/500 等)
-- 后端统一使用 `success_respons(data, message)` 辅助函数构造成功响应
+- 后端统一使用 `success_response(data, message)` 辅助函数构造成功响应
 
 ### 5.2 阻塞型 DB 操作异步化
 
@@ -108,15 +110,28 @@ data = await run_in_threadpoo(cart_service.get_cart, current_user.user_id)
 
 ### 5.3 事务与并发安全
 
-- DAO 不提交事务, Service 负责 `commi()`
-- 结算接口对商品行加锁防超卖, 使用 `SELECT ... FOR UPDATE`, 并通过 `populate_existing=True` 刷新最新库存值
-- 任何结算异常都需 `rollbac()` 后重新抛出
+- DAO 不提交事务, Service 负责 `commit()`
+- 订单创建与支付对商品/用户行加锁防超卖与并发透支, 使用 `SELECT ... FOR UPDATE`, 并通过 `populate_existing=True` 刷新最新值
+- 订单 20 分钟未支付采用**惰性取消**: 查询/支付订单时判定 `expire_at`, 过期则置为已取消并回补库存, 无需后台定时任务
+- 任何事务异常都需 `rollback()` 后重新抛出
 
 ### 5.4 鉴权
 
 - 登录签发 `access_token`(短时)+ `refresh_token`(长时)
 - `refresh_token` 用于换取新的 `access_token`, 前端在 401 时自动刷新并重放请求
 - `SECRET_KEY` 必须通过环境变量/`.env` 提供, 禁止使用默认值
+
+### 5.5 智能客服
+
+- LLM 通过 `llm_client.py` 封装 DeepSeek(OpenAI 兼容)流式接口, 不引入智能体框架
+- **系统提示词外置于 `app/prompts/system_prompt.md`**(含手写的工具清单与调用场景), 代码按 mtime 缓存热加载, 改文件即生效无需重启; 工具实现仍以注册表形式存在于 `app/tools/`
+- 对话经 `chat_service.chat_stream` 编排: 保存用户消息 → 组装上下文(滑动窗口 20 条) → 流式输出 → 工具调用循环(最多 5 轮, 超限强制作答) → 助手消息落库
+- 工具调用消息仅存在于单次请求的 LLM 上下文中, 不落库; `chat_messages` 只存用户/助手消息
+- 工具执行结果统一兜底为 `{ok, data|error}`, 永远限定当前用户数据权限
+- 商品/订单卡片随消息发送时, 后端生成快照文本注入上下文并随消息存库, 历史重建零额外查询
+- 深度思考通过系统提示的 CoT 约定实现(只输出最终答案), 不向前端暴露开关
+- `DEEPSEEK_API_KEY` 未配置时客服接口统一返回 503, 不影响主站功能
+- SSE 流式接口需注意 Nginx 反代时关闭缓冲(`X-Accel-Buffering: no` 响应头已内置)
 
 ## 6. 本地开发环境搭建
 

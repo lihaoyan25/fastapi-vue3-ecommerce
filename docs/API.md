@@ -26,9 +26,9 @@ Authorization: Bearer <access_token>
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| code | int | 状态码，成功为 `200`; 失败与 HTTP 状态码一致 |
-| message | string | 提示信息，成功默认 `success`，失败为具体错误描述 |
-| data | any | 业务数据，无数据时为 `null` |
+| code | int | 状态码, 成功为 `200`; 失败与 HTTP 状态码一致 |
+| message | string | 提示信息, 成功默认 `success`, 失败为具体错误描述 |
+| data | any | 业务数据, 无数据时为 `null` |
 
 ### 1.2 错误码
 
@@ -71,10 +71,10 @@ Authorization: Bearer <access_token>
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| username | string | 是 | 字母开头，3-50 位字母/数字/下划线 |
+| username | string | 是 | 字母开头, 3-50 位字母/数字/下划线 |
 | email | string | 是 | 合法邮箱 |
 | phone | string | 否 | 11 位手机号 |
-| password | string | 是 | 8-20 位，含大小写字母与数字 |
+| password | string | 是 | 8-20 位, 含大小写字母与数字 |
 | password_confirm | string | 是 | 需与 password 一致 |
 
 成功响应 `data`(用户信息): 
@@ -146,13 +146,26 @@ Authorization: Bearer <access_token>
 
 `PUT /users/me`
 
-请求体(字段均为可选): 
+请求体(字段均为可选; 修改 email/phone 时 `current_password` 必填):  
 
 ```json
-{ "email": "new@example.com", "phone": "13900139000" }
+{
+  "username": "newname",
+  "email": "new@example.com",
+  "phone": "13900139000",
+  "current_password": "Abc12345"
+}
 ```
 
-成功响应 `data`: 更新后的用户信息
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| username | string | 否 | 新用户名, 无需密码验证 |
+| email | string | 否 | 新邮箱, 需 `current_password` 验证 |
+| phone | string | 否 | 新手机号, 需 `current_password` 验证 |
+| current_password | string | 条件 | 修改 email/phone 时必填 |
+
+- 修改项与原值相同则跳过; 用户名/邮箱/手机号与他人重复时返回 400
+- 成功响应 `data`: 更新后的用户信息
 
 ### 3.2 修改密码
 
@@ -164,7 +177,7 @@ Authorization: Bearer <access_token>
 { "old_password": "Abc12345", "new_password": "Xyz98765" }
 ```
 
-成功响应: `data` 为 `null`，`message` 为 `密码修改成功`
+成功响应: `data` 为 `null`, `message` 为 `密码修改成功`
 
 ### 3.3 查询余额
 
@@ -188,7 +201,7 @@ Authorization: Bearer <access_token>
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| amount | number | 是 | 充值金额，必须大于 0 |
+| amount | number | 是 | 充值金额, 必须大于 0 |
 
 成功响应 `data`: 
 
@@ -206,8 +219,8 @@ Authorization: Bearer <access_token>
 
 | 参数 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
-| page | int | 1 | 页码，>=1 |
-| page_size | int | 10 | 每页数量，1-100 |
+| page | int | 1 | 页码, >=1 |
+| page_size | int | 10 | 每页数量, 1-100 |
 
 成功响应 `data`: 
 
@@ -254,13 +267,13 @@ Authorization: Bearer <access_token>
 
 `PUT /products/{product_id}`(需管理员)
 
-请求体字段均可选(`name` / `description` / `price` / `stock` / `image_url` / `is_active`)，仅更新传入字段成功响应 `data`: 更新后的商品对象
+请求体字段均可选(`name` / `description` / `price` / `stock` / `image_url` / `is_active`), 仅更新传入字段成功响应 `data`: 更新后的商品对象
 
 ### 4.6 删除商品(管理员)
 
 `DELETE /products/{product_id}`(需管理员)
 
-软删除(将 `is_active` 置为 `false`)成功响应: `data` 为 `null`，`message` 为 `删除成功`
+软删除(将 `is_active` 置为 `false`)成功响应: `data` 为 `null`, `message` 为 `删除成功`
 
 ## 5. 购物车模块 `/cart`
 
@@ -327,19 +340,151 @@ Authorization: Bearer <access_token>
 
 成功响应 `data`: 清空后的购物车结构(`items` 为空)
 
-### 5.6 结算
+> 结算已改为订单模式: 在购物车页勾选商品后调用「6.2 创建订单」, 不再有 `/cart/checkout` 接口
 
-`POST /cart/checkout`
+## 6. 订单模块 `/orders`
 
-校验库存与余额，扣减库存和余额并清空购物车成功响应 `data`: 
+> 以下接口均需登录订单状态: `1`=待支付, `2`=已支付, `3`=已取消待支付订单 20 分钟内有效, 超时未支付由系统惰性取消(查询/支付时判定)并自动回补库存
+
+### 6.1 订单列表(分页)
+
+`GET /orders?page=1&page_size=10&status=1`
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| page | int | 否 | 页码, 默认 1 |
+| page_size | int | 否 | 每页数量, 默认 10, 1-100 |
+| status | int | 否 | 按状态过滤: 1/2/3 |
+
+成功响应 `data`: 
 
 ```json
-{ "success": true, "total_amount": 19998.0, "message": "结算成功" }
+{
+  "items": [ { "order_id": 1, "order_no": "20260910120000AB12CD34", "total_amount": 19998.0, "status": 1, "expire_at": "2026-09-10T12:20:00", "paid_at": null, "created_at": "2026-09-10T12:00:00", "items": [ { "product_id": 1, "product_name": "iPhone 17 Pro", "product_price": 9999.0, "image_url": "/static/upload/xxx.jpg", "quantity": 2, "subtotal": 19998.0 } ] } ],
+  "total": 1,
+  "page": 1,
+  "page_size": 10
+}
 ```
 
-常见失败: 库存不足(400)、余额不足(400)、购物车为空(400)
+### 6.2 创建订单
 
-## 6. 数据模型速查
+`POST /orders`(购物车选中商品结算)
+
+请求体: 
+
+```json
+{ "product_ids": [1, 2, 3] }
+```
+
+行为: 锁定商品行扣减库存(防超卖)、生成待支付订单(20 分钟有效)、删除对应购物车项
+
+常见失败: 未选择商品(400)、购物车中不存在该商品(400)、商品已下架(400)、库存不足(400)
+
+### 6.3 订单详情
+
+`GET /orders/{order_id}`
+
+成功响应 `data`: 同 6.1 中单个订单结构
+
+### 6.4 支付订单
+
+`POST /orders/{order_id}/pay`
+
+使用账户余额支付, 扣款成功后订单变为「已支付」
+
+常见失败: 余额不足(400)、订单已取消(400)、重复支付(400)
+
+### 6.5 取消订单
+
+`POST /orders/{order_id}/cancel`
+
+仅待支付订单可取消, 取消后自动回补库存, 订单状态变为「已取消」
+
+### 6.6 删除订单
+
+`DELETE /orders/{order_id}`
+
+仅已取消的订单可删除, 成功响应 `data` 为 `null`
+
+## 7. 智能客服模块 `/chat`
+
+> 以下接口均需登录依赖 `DEEPSEEK_API_KEY` 配置, 未配置时返回 503消息以 SSE 流式返回(仅流式接口), 其余接口为统一 JSON 响应
+
+### 7.1 新建会话
+
+`POST /chat/sessions`
+
+成功响应 `data`: 
+
+```json
+{ "session_id": 1, "title": "新会话", "created_at": "...", "updated_at": "..." }
+```
+
+### 7.2 会话列表
+
+`GET /chat/sessions`
+
+成功响应 `data`: 会话数组, 按更新时间倒序
+
+### 7.3 会话消息历史
+
+`GET /chat/sessions/{session_id}/messages`
+
+成功响应 `data`: 
+
+```json
+{
+  "session": { "session_id": 1, "title": "..." },
+  "messages": [ { "message_id": 1, "role": "user", "content": "...", "context": null, "created_at": "..." } ]
+}
+```
+
+`context` 不为 `null` 时为卡片快照: `{ "type": "product|order", "id": 1, "text": "注入客服的描述文本" }`
+
+### 7.4 删除会话
+
+`DELETE /chat/sessions/{session_id}`(级联删除消息)
+
+### 7.5 推荐卡片
+
+`GET /chat/recommendations`
+
+返回最近订单、在售商品与购物车项, 供前端渲染卡片后随消息回发: 
+
+```json
+{
+  "orders": [ { "type": "order", "id": 1, "order_no": "...", "status": 1, "total_amount": 99.0 } ],
+  "products": [ { "type": "product", "id": 3, "name": "...", "price": 59.0, "image_url": "..." } ],
+  "carts": [ { "type": "cart", "product_id": 3, "name": "...", "quantity": 2 } ]
+}
+```
+
+> 订单/商品卡片发送时作为 `context` 传给 7.6; 购物车卡片点击后直接填充提问文本即可, 无需 `context`
+
+### 7.6 发送消息(SSE 流式)
+
+`POST /chat/sessions/{session_id}/messages/stream`
+
+请求体: 
+
+```json
+{ "content": "帮我看看这个商品还有货吗", "context": { "type": "product", "id": 3 } }
+```
+
+`context` 可选, 对应前端发送的商品/订单卡片
+
+响应为 `text/event-stream`, 每个事件一行 `data: {JSON}`: 
+
+| 事件 type | 字段 | 说明 |
+| --- | --- | --- |
+| meta | session_id, user_message_id | 流开始, 用户消息已落库 |
+| delta | content | 回复文本增量, 按序拼接即为完整回复 |
+| tool | name, display | 客服正在调用工具(如「正在查询订单」) |
+| done | message_id | 回复完成, 助手消息已落库 |
+| error | message | 出错提示 |
+
+## 8. 数据模型速查
 
 ### UserResponse
 

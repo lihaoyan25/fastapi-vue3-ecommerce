@@ -26,8 +26,10 @@ async def update_my_info(
     user = await run_in_threadpool(
         user_service.update_my_info,
         current_user.user_id,
+        user_in.username,
         user_in.email,
         user_in.phone,
+        user_in.current_password,
     )
     return success_response(data=UserResponse.model_validate(user).model_dump())
 

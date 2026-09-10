@@ -2,10 +2,8 @@
 from typing import List
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 from fastapi import HTTPException
 from app.models.cart import CartItem
-from app.models.product import Product
 from app.dao.cart_dao import CartDAO
 from app.services.product_service import ProductService
 from app.services.user_service import UserService
@@ -103,61 +101,3 @@ class CartService:
         self.cart_dao.clear_by_user(self.db, user_id)
         self.db.commit()
         return self.get_cart(user_id)
-
-    def checkout(self, user_id: int):
-        """购物车结算（添加行锁防超卖）"""
-        try:
-            # 1. 获取购物车
-            cart_items = self.cart_dao.get_by_user(self.db, user_id)
-            if not cart_items:
-                raise HTTPException(status_code=400, detail="购物车为空")
-
-            # 2. 校验所有商品库存并计算总金额（仅预检，不加锁）
-            total_amount = Decimal("0.00")
-            for item in cart_items:
-                product = self.product_service.get_product(item.product_id, check_active=True)
-                if not self.product_service.check_stock(product, item.quantity):
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"商品【{product.name}】库存不足"
-                    )
-                total_amount += product.price * item.quantity
-            total_amount = round(total_amount, 2)
-
-            # 3. 校验用户余额
-            user = self.user_service.get_user_by_id(user_id)
-            if user.balance < total_amount:
-                raise HTTPException(status_code=400, detail="账户余额不足")
-
-            # 4. 扣减库存，with_for_update() 添加数据库行锁，防止并发超卖
-            for item in cart_items:
-                # 锁定商品行，其他事务必须等本次提交完成后才能修改
-                stmt = select(Product).where(Product.product_id == item.product_id).with_for_update()
-                # populate_existing 强制用数据库最新值刷新实例，避免沿用步骤2预检时的过期快照
-                product = self.db.execute(
-                    stmt.execution_options(populate_existing=True)
-                ).scalar_one()
-                # 加锁后二次校验库存（非常关键！预检后库存有可能被别人改掉）
-                if product.stock < item.quantity:
-                    raise HTTPException(status_code=400, detail=f"商品【{product.name}】库存不足")
-                product.stock -= item.quantity
-
-            # 5. 扣减用户余额
-            user.balance -= total_amount
-
-            # 6. 清空购物车
-            self.cart_dao.clear_by_user(self.db, user_id)
-
-            # 7. 一次性提交全部修改，事务生效
-            self.db.commit()
-
-            return {
-                "success": True,
-                "total_amount": total_amount,
-                "message": "结算成功"
-            }
-
-        except Exception as e:
-            # 任何异常都回滚事务
-            self.db.rollback()
-            raise e

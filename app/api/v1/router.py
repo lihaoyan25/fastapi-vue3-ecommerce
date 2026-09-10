@@ -1,6 +1,6 @@
 """API v1路由汇总"""
 from fastapi import APIRouter
-from .routes import auth, products, cart, users
+from .routes import auth, products, cart, users, orders, chat
 
 api_router = APIRouter()
 
@@ -12,3 +12,7 @@ api_router.include_router(products.router, prefix="/products", tags=["商品"])
 api_router.include_router(cart.router, prefix="/cart", tags=["购物车"])
 # 注册用户路由
 api_router.include_router(users.router, prefix="/users", tags=["用户"])
+# 注册订单路由
+api_router.include_router(orders.router, prefix="/orders", tags=["订单"])
+# 注册智能客服路由
+api_router.include_router(chat.router, prefix="/chat", tags=["智能客服"])

@@ -24,8 +24,3 @@ export function removeCartItem(product_id) {
 export function clearCart() {
   return request.delete('/cart/clear')
 }
-
-// 结算
-export function checkout() {
-  return request.post('/cart/checkout')
-}

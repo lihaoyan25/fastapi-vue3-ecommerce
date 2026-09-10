@@ -16,7 +16,7 @@
               v-model="form.username"
               type="text"
               class="w-full px-4 py-3 rounded-xl border border-white/30 input-focus bg-white/95 text-text-primary"
-              placeholder="请输入用户名"
+              placeholder="用户名/手机号/邮箱"
               required
             />
           </div>
@@ -39,11 +39,16 @@
             {{ loading ? '登录中...' : '登录' }}
           </button>
         </form>
-        <!-- 底部注册文字改为白色 -->
-        <p class="text-center text-sm text-white/75 mt-6">
-          还没有账户？
-          <router-link to="/register" class="text-white hover:text-white hover:underline">立即注册</router-link>
-        </p>
+        <!-- 底部注册/忘记密码文字改为白色 -->
+        <div class="flex items-center justify-between mt-6 text-sm text-white/75">
+          <router-link to="/forgot-password" class="hover:text-white hover:underline">
+            忘记密码？
+          </router-link>
+          <span>
+            还没有账户？
+            <router-link to="/register" class="text-white hover:text-white hover:underline">立即注册</router-link>
+          </span>
+        </div>
       </div>
     </div>
   </div>

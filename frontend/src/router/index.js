@@ -15,6 +15,12 @@ const routes = [
     meta: { guest: true }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('../views/auth/ForgotPassword.vue'),
+    meta: { guest: true }
+  },
+  {
     path: '/',
     name: 'Home',
     component: () => import('../views/Home.vue'),
@@ -30,6 +36,12 @@ const routes = [
     path: '/cart',
     name: 'Cart',
     component: () => import('../views/Cart.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: () => import('../views/Orders.vue'),
     meta: { requiresAuth: true }
   },
   {

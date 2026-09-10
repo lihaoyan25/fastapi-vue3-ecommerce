@@ -15,6 +15,12 @@
           商品
         </router-link>
         <router-link
+          to="/orders"
+          class="text-sm text-text-secondary hover:text-text-primary btn-transition"
+        >
+          我的订单
+        </router-link>
+        <router-link
           v-if="userStore.isAdmin"
           to="/admin/products"
           class="text-sm text-text-secondary hover:text-text-primary btn-transition"

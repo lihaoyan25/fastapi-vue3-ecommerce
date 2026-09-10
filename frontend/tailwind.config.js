@@ -8,8 +8,8 @@ export default {
     extend: {
       colors: {
         // ===== 主按钮颜色=====
-        primary: '#EAB308',          // 金色（相当于 tailwind 的 yellow-500）
-        'primary-hover': '#D97706',  // 悬浮加深（amber-600）
+        primary: '#EAB308',
+        'primary-hover': '#D97706',
         // ===== 以下保持不变 =====
         'gray-bg': '#F5F5F7',
         'text-primary': '#1D1D1F',

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.services.user_service import UserService
-from app.api.v1.schemas.user import UserCreate, UserResponse
+from app.api.v1.schemas.user import UserCreate, UserResponse, ForgotPasswordRequest
 from app.api.v1.schemas.common import TokenResponse, RefreshTokenRequest, success_response
 from app.api.deps import get_current_user
 from app.models.user import User
@@ -79,6 +79,22 @@ async def refresh_token(
             refresh_token=refresh_in.refresh_token,
         ).model_dump()
     )
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    reset_in: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """忘记密码：通过 账号(用户名或邮箱) + 手机号 验证身份后重置密码（无需登录）"""
+    user_service = UserService(db)
+    await run_in_threadpool(
+        user_service.reset_password,
+        reset_in.account,
+        reset_in.phone,
+        reset_in.new_password,
+    )
+    return success_response(message="密码重置成功，请使用新密码登录")
 
 
 @router.get("/me")

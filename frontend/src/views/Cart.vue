@@ -6,21 +6,38 @@
       <div v-if="cartStore.items.length > 0" class="flex gap-8">
         <!-- 商品列表 -->
         <div class="flex-1 space-y-4">
+          <!-- 全选 -->
+          <label class="flex items-center gap-2 px-2 text-sm text-text-secondary cursor-pointer select-none">
+            <input
+              type="checkbox"
+              :checked="isAllSelected"
+              @change="toggleSelectAll"
+              class="w-4 h-4 accent-amber-600 cursor-pointer"
+            />
+            全选
+          </label>
           <div
             v-for="item in cartStore.items"
             :key="item.cart_item_id"
             class="bg-white rounded-xl p-5 shadow-card flex items-center gap-5"
           >
-          <!-- 商品图 -->
-          <div class="w-20 h-20 rounded-lg bg-gray-bg flex items-center justify-center flex-shrink-0 overflow-hidden">
-            <img
-              v-if="item.image_url"
-              :src="item.image_url"
-              alt=""
-              class="w-full h-full object-cover"
+            <!-- 选中框 -->
+            <input
+              type="checkbox"
+              :checked="selectedIds.has(item.product_id)"
+              @change="toggleSelect(item.product_id)"
+              class="w-4 h-4 accent-amber-600 cursor-pointer flex-shrink-0"
             />
-            <span v-else class="text-3xl">📦</span>
-          </div>
+            <!-- 商品图 -->
+            <div class="w-20 h-20 rounded-lg bg-gray-bg flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img
+                v-if="item.image_url"
+                :src="item.image_url"
+                alt=""
+                class="w-full h-full object-cover"
+              />
+              <span v-else class="text-3xl">📦</span>
+            </div>
             <!-- 信息 -->
             <div class="flex-1 min-w-0">
               <h3 class="font-medium text-text-primary truncate">{{ item.product_name }}</h3>
@@ -60,20 +77,24 @@
         <!-- 结算栏 -->
         <div class="w-72 flex-shrink-0">
           <div class="bg-white rounded-xl p-6 shadow-card sticky top-24">
-            <div class="flex justify-between mb-3 text-text-secondary">
-              <span>商品数量</span>
+            <div class="flex justify-between mb-3 text-text-secondary text-sm">
+              <span>已选商品</span>
+              <span>{{ selectedQuantity }} 件</span>
+            </div>
+            <div class="flex justify-between mb-3 text-text-secondary text-sm">
+              <span>商品总数</span>
               <span>{{ cartStore.totalQuantity }} 件</span>
             </div>
             <div class="flex justify-between mb-6 text-lg font-semibold text-text-primary">
-              <span>合计</span>
-              <span>{{ formatPrice(cartStore.totalAmount) }}</span>
+              <span>已选合计</span>
+              <span>{{ formatPrice(selectedAmount) }}</span>
             </div>
             <button
               @click="handleCheckout"
-              :disabled="checkingOut"
+              :disabled="checkingOut || selectedIds.size === 0"
               class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 text-white py-3 rounded-xl font-medium btn-transition hover:from-yellow-600 hover:to-amber-700 disabled:opacity-50"
             >
-              {{ checkingOut ? '结算中...' : '立即结算' }}
+              {{ checkingOut ? '结算中...' : (selectedIds.size > 0 ? `结算 ${selectedIds.size} 件商品` : '请先选择商品') }}
             </button>
             <button
               @click="handleClear"
@@ -99,13 +120,56 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { formatPrice } from '../utils/format'
 import EmptyState from '../components/EmptyState.vue'
 import { clearCart } from '../api/cart'
+import { createOrder } from '../api/order'
 const cartStore = useCartStore()
+const router = useRouter()
 const checkingOut = ref(false)
+
+// 选中状态：以 product_id 为键的 Set（响应式）
+const selectedIds = reactive(new Set())
+
+const isAllSelected = computed(() =>
+  cartStore.items.length > 0 && cartStore.items.every(item => selectedIds.has(item.product_id))
+)
+const selectedQuantity = computed(() =>
+  cartStore.items
+    .filter(item => selectedIds.has(item.product_id))
+    .reduce((sum, item) => sum + item.quantity, 0)
+)
+const selectedAmount = computed(() =>
+  cartStore.items
+    .filter(item => selectedIds.has(item.product_id))
+    .reduce((sum, item) => sum + Number(item.subtotal), 0)
+)
+
+function toggleSelect(product_id) {
+  if (selectedIds.has(product_id)) {
+    selectedIds.delete(product_id)
+  } else {
+    selectedIds.add(product_id)
+  }
+}
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.clear()
+  } else {
+    cartStore.items.forEach(item => selectedIds.add(item.product_id))
+  }
+}
+// 商品移除后，清掉对应的选中状态
+watch(() => cartStore.items, (items) => {
+  const validIds = new Set(items.map(item => item.product_id))
+  for (const pid of [...selectedIds]) {
+    if (!validIds.has(pid)) selectedIds.delete(pid)
+  }
+})
+
 async function updateQuantity(product_id, quantity) {
   if (quantity < 1) {
     removeItem(product_id)
@@ -130,16 +194,25 @@ async function handleClear() {
   try {
     await clearCart()
     await cartStore.refreshCart()
+    selectedIds.clear()
     window.$toast.success('购物车已清空')
   } catch (e) {
     window.$toast.error(e.message)
   }
 }
 async function handleCheckout() {
+  if (selectedIds.size === 0) {
+    window.$toast.error('请先勾选要结算的商品')
+    return
+  }
+  if (!confirm('确定结算选中的商品吗？')) return
   checkingOut.value = true
   try {
-    const res = await cartStore.checkout()
-    window.$toast.success(`结算成功，共消费 ${formatPrice(res.total_amount)}`)
+    await createOrder([...selectedIds])
+    window.$toast.success('订单创建成功，请在 20 分钟内完成支付')
+    selectedIds.clear()
+    await cartStore.refreshCart()
+    router.push('/orders')
   } catch (e) {
     window.$toast.error(e.message)
   } finally {
@@ -152,5 +225,3 @@ onMounted(() => {
   })
 })
 </script>
-
-

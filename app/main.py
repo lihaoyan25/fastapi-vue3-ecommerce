@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .config import settings
 from .database import engine, Base
 # 导入模型以确保create_all能识别到所有表
-from .models import user, product, cart
+from .models import user, product, cart, order, chat
 
 
 # 项目生命周期管理
