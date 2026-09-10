@@ -66,7 +66,7 @@ SERVER_PORT=8000
 ### 4.1 安装依赖
 
 ```bash
-cd /opt/fastapi-vue3-ecommerce
+cd /opt/vesta‑ecommerce
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -85,7 +85,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ## 5. 前端构建
 
 ```bash
-cd /opt/fastapi-vue3-ecommerce/frontend
+cd /opt/vesta‑ecommerce/frontend
 npm install
 npm run build          # 产物输出到 frontend/dist
 ```
@@ -100,7 +100,7 @@ server {
     server_name your-domain.com;
 
     # 前端静态资源
-    root /opt/fastapi-vue3-ecommerce/frontend/dist;
+    root /opt/vesta‑ecommerce/frontend/dist;
     index index.html;
 
     # 前端 SPA 路由回退
@@ -137,7 +137,7 @@ sudo systemctl reload nginx
 首次部署后, 执行一次管理员初始化: 
 
 ```bash
-cd /opt/fastapi-vue3-ecommerce
+cd /opt/vesta‑ecommerce
 source .venv/bin/activate
 python scripts/init_db.py
 # 默认 admin / admin123, 登录后请立即修改密码
