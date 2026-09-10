@@ -1,6 +1,6 @@
-# 购物车管理系统 (shop_cart_sys_v2.0)
+# 智能线上商城(vesta-shop)
 
-一个前后端分离的**购物车管理系统**, 实现用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算, 智能客服等核心电商闭环能力
+一个前后端分离的**智能线上商城**, 实现智能客服AI Agent, 用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算等核心电商闭环能力
 
 - 后端: FastAPI + SQLAlchemy 2.0 + MySQL, JWT 鉴权, 分层架构 (`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Vite + Pinia + Vue Router + Axios + Tailwind CSS
@@ -77,7 +77,9 @@ shop_cart_sys_v2.0/
 │   ├── services/               # 业务逻辑层
 │   ├── dao/                    # 数据访问层
 │   ├── models/                 # SQLAlchemy ORM 模型
-│   └── utils/                  # 工具 (安全, 令牌等)
+│   ├── tools/                  # 智能客服工具层
+│   ├── utils/                  # 通用工具(JWT, 密码)
+│   └── prompts/                # 智能客服系统提示词(System Prompt)
 ├── frontend/                   # 前端应用
 │   └── src/
 │       ├── api/                # Axios 封装与接口定义

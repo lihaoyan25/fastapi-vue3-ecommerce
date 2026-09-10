@@ -2,7 +2,7 @@
 
 ## 1. 项目简介
 
-本项目是一个前后端分离的**购物车管理系统**, 采用 FastAPI + Vue 3 技术栈, 实现用户注册登录(支持用户名/邮箱/手机号)、忘记密码、商品浏览/搜索/管理、购物车勾选结算、订单与余额支付(20 分钟未支付自动取消)、余额充值、个人资料与密码管理等核心电商闭环能力
+本项目是一个前后端分离的**智能线上商城**, 采用 FastAPI + Vue 3 技术栈, 实现智能客服AI Agent(SSE streaming & tool calling), 用户注册登录(支持用户名/邮箱/手机号), 忘记密码, 商品浏览/搜索/管理, 购物车勾选结算, 订单与余额支付(20 分钟未支付自动取消), 余额充值, 个人资料与密码管理等核心电商闭环能力
 
 - 后端: RESTful API, JWT 鉴权, 分层架构(`routes → services → dao → models/schemas`)
 - 前端: Vue 3 `<script setup>` + Pinia + Vue Router + Axios + Tailwind CSS
