@@ -1,4 +1,4 @@
-# 智能线上商城(vesta-shop)
+# 智能线上商城(VESTA.OnlineMall)
 
 一个前后端分离的**智能线上商城**, 实现智能客服AI Agent, 用户注册登录, 商品浏览/搜索/管理, 购物车, 余额充值, 下单结算等核心电商闭环能力
 
@@ -63,7 +63,7 @@
 ## 目录结构
 
 ```text
-shop_cart_sys_v2.0/
+fastapi-vue3-ecommerce/
 ├── app/                        # 后端应用
 │   ├── main.py                 # 应用入口: 生命周期, CORS, 全局异常, 路由挂载
 │   ├── config.py               # 配置 (读取 .env)

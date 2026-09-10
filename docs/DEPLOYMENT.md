@@ -66,7 +66,7 @@ SERVER_PORT=8000
 ### 4.1 安装依赖
 
 ```bash
-cd /opt/shop_cart_sys_v2.0
+cd /opt/fastapi-vue3-ecommerce
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -82,39 +82,10 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### 4.3 使用 systemd 托管 (推荐)
-
-创建 `/etc/systemd/system/shop-cart.service`: 
-
-```ini
-[Unit]
-Description=Shop Cart Backend
-After=network.target mysql.service
-
-[Service]
-User=www-data
-WorkingDirectory=/opt/shop_cart_sys_v2.0
-EnvironmentFile=/opt/shop_cart_sys_v2.0/.env
-ExecStart=/opt/shop_cart_sys_v2.0/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
-
-启用并启动: 
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable shop-cart
-sudo systemctl start shop-cart
-```
-
 ## 5. 前端构建
 
 ```bash
-cd /opt/shop_cart_sys_v2.0/frontend
+cd /opt/fastapi-vue3-ecommerce/frontend
 npm install
 npm run build          # 产物输出到 frontend/dist
 ```
@@ -129,7 +100,7 @@ server {
     server_name your-domain.com;
 
     # 前端静态资源
-    root /opt/shop_cart_sys_v2.0/frontend/dist;
+    root /opt/fastapi-vue3-ecommerce/frontend/dist;
     index index.html;
 
     # 前端 SPA 路由回退
@@ -166,7 +137,7 @@ sudo systemctl reload nginx
 首次部署后, 执行一次管理员初始化: 
 
 ```bash
-cd /opt/shop_cart_sys_v2.0
+cd /opt/fastapi-vue3-ecommerce
 source .venv/bin/activate
 python scripts/init_db.py
 # 默认 admin / admin123, 登录后请立即修改密码

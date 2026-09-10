@@ -31,7 +31,7 @@
 ## 3. 目录结构
 
 ```text
-shop_cart_sys_v2.0/
+fastapi-vue3-ecommerce/
 ├── app/                        # 后端应用
 │   ├── main.py                 # 应用入口: 生命周期、CORS、全局异常、路由挂载
 │   ├── config.py               # 配置(pydantic-settings 读取 .env)
