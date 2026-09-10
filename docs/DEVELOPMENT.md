@@ -129,7 +129,7 @@ data = await run_in_threadpoo(cart_service.get_cart, current_user.user_id)
 - 工具调用消息仅存在于单次请求的 LLM 上下文中, 不落库; `chat_messages` 只存用户/助手消息
 - 工具执行结果统一兜底为 `{ok, data|error}`, 永远限定当前用户数据权限
 - 商品/订单卡片随消息发送时, 后端生成快照文本注入上下文并随消息存库, 历史重建零额外查询
-- 深度思考通过系统提示的 CoT 约定实现(只输出最终答案), 不向前端暴露开关
+- 思考模式由 `.env` 的 `DEEPSEEK_THINKING` 开关控制, 请求体显式写入 `thinking.type`(V4 系列服务端默认 `enabled`, 必须显式覆盖), 不向前端暴露开关
 - `DEEPSEEK_API_KEY` 未配置时客服接口统一返回 503, 不影响主站功能
 - SSE 流式接口需注意 Nginx 反代时关闭缓冲(`X-Accel-Buffering: no` 响应头已内置)
 

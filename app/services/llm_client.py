@@ -40,6 +40,8 @@ class LLMClient:
             "max_tokens": settings.DEEPSEEK_MAX_TOKENS,
             "top_p": settings.DEEPSEEK_TOP_P,
             "stream": True,
+            # 思考模式显式开关（服务端默认 enabled，不传会默认开启深度思考，延迟与成本翻倍）
+            "thinking": {"type": "enabled" if settings.DEEPSEEK_THINKING else "disabled"},
         }
         if tools:
             payload["tools"] = tools

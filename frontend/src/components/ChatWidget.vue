@@ -127,9 +127,14 @@
                   <span class="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                   {{ m.toolStatus }}...
                 </div>
+                <!-- 等待首字回复：跳动圆点 + 柔闪提示文字 -->
+                <div v-if="m.streaming && !m.content && !m.toolStatus" class="flex items-center gap-2 py-0.5">
+                  <span class="typing-dots"><i></i><i></i><i></i></span>
+                  <span class="text-xs text-text-tertiary blink-soft">客服正在赶来...请稍等</span>
+                </div>
                 <!-- markdown 渲染（流式期间每次增量都会重渲染） -->
-                <div class="md-content break-words" v-html="renderMarkdown(m.content)"></div>
-                <span v-if="m.streaming && !m.toolStatus" class="text-primary animate-pulse">▍</span>
+                <div v-if="m.content" class="md-content break-words" v-html="renderMarkdown(m.content)"></div>
+                <span v-if="m.streaming && m.content && !m.toolStatus" class="text-primary animate-pulse">▍</span>
               </div>
             </div>
           </template>
@@ -382,5 +387,48 @@ async function handleDeleteSession(session) {
 .md-content :deep(a) {
   color: var(--color-primary, #b45309);
   text-decoration: underline;
+}
+
+/* 等待回复：三个跳动圆点 */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.typing-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #d97706;
+  animation: dot-bounce 1.2s infinite ease-in-out;
+}
+.typing-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* 提示文字柔闪 */
+.blink-soft {
+  animation: soft-blink 1.6s infinite;
+}
+@keyframes soft-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 </style>

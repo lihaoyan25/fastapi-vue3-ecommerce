@@ -75,7 +75,7 @@
 
         <!-- 修改用户名 -->
         <div class="mb-6">
-          <p class="text-sm text-text-secondary mb-2">修改用户名（无需密码验证）</p>
+          <p class="text-sm text-text-secondary mb-2">修改用户名</p>
           <div class="flex gap-3">
             <input
               v-model="usernameForm.username"

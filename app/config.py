@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     DEEPSEEK_TEMPERATURE: float = 0.7
     DEEPSEEK_MAX_TOKENS: int = 2048
     DEEPSEEK_TOP_P: float = 0.95
+    # 思考模式开关：显式写入请求参数 thinking.type（V4 系列服务端默认 enabled，必须显式覆盖）
+    DEEPSEEK_THINKING: bool = False
 
     @property
     def LLM_ENABLED(self) -> bool:
