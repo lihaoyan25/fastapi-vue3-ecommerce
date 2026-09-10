@@ -115,7 +115,7 @@
 
       <!-- 空状态 -->
       <EmptyState
-        v-else-if="!loading"
+        v-if="orders.length === 0 && !loading"
         icon="📋"
         title="暂无订单"
         description="去购物车挑选商品下单吧"
